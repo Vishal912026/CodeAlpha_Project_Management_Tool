@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Project Management Tool</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <header>
+    <h1>TaskBoard</h1>
+<div id="userInfo"></div>
+<button id="logoutBtn" style="display:none;">Logout</button>
+  </header>
+
+  <div id="authSection">
+    <div class="authBox">
+      <h2 id="formTitle">Login</h2>
+      <input type="text" id="nameInput" placeholder="Name" style="display:none;">
+      <input type="email" id="emailInput" placeholder="Email">
+      <input type="password" id="passwordInput" placeholder="Password">
+      <button id="authBtn">Login</button>
+      <p id="toggleText">Don't have an account? <span id="toggleLink">Register</span></p>
+    </div>
+  </div>
+
+  <div id="appSection" style="display:none;">
+    <div class="sidebar">
+      <h3>My Projects</h3>
+      <input type="text" id="projectNameInput" placeholder="New project name">
+      <button id="createProjectBtn">+ Add Project</button>
+      <ul id="projectList"></ul>
+    </div>
+
+    <div class="mainPanel">
+      <h2 id="currentProjectName">Select a project</h2>
+
+      <div id="memberBox" style="display:none;">
+        <input type="email" id="memberEmailInput" placeholder="Add member by email">
+        <button id="addMemberBtn">Add Member</button>
+        <span id="memberList"></span>
+      </div>
+
+      <div id="taskFormBox" style="display:none;">
+        <input type="text" id="taskTitleInput" placeholder="Task title">
+        <select id="taskPriorityInput">
+          <option value="Low">Low</option>
+          <option value="Medium" selected>Medium</option>
+          <option value="High">High</option>
+        </select>
+        <select id="taskAssignInput">
+          <option value="">Unassigned</option>
+        </select>
+        <button id="createTaskBtn">+ Add Task</button>
+      </div>
+      <div id="taskBoard">
+        <div class="column" data-status="To-Do"><h4>To-Do</h4><div class="taskList" id="todoList"></div></div>
+        <div class="column" data-status="In-Progress"><h4>In-Progress</h4><div class="taskList" id="inprogressList"></div></div>
+        <div class="column" data-status="Done"><h4>Done</h4><div class="taskList" id="doneList"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="commentModal" style="display:none;">
+    <div class="modalBox">
+      <span id="closeModal">&times;</span>
+      <h3 id="modalTaskTitle"></h3>
+      <div id="commentsList"></div>
+      <input type="text" id="commentInput" placeholder="Write a comment">
+      <button id="postCommentBtn">Post</button>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,159 @@
+* { box-sizing: border-box; margin: 0; padding: 0; font-family: Arial, sans-serif; }
+body { background: #f4f5f7; }
+
+header {
+  background: #2c3e50;
+  color: white;
+  padding: 15px 30px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+#authSection {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 80vh;
+}
+
+.authBox {
+  background: white;
+  padding: 30px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  width: 300px;
+}
+
+.authBox input {
+  width: 100%;
+  padding: 10px;
+  margin: 8px 0;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.authBox button {
+  width: 100%;
+  padding: 10px;
+  background: #2c3e50;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-top: 10px;
+}
+
+#toggleLink { color: #2c3e50; cursor: pointer; font-weight: bold; }
+
+#appSection { display: flex; }
+
+.sidebar {
+  width: 250px;
+  background: white;
+  padding: 20px;
+  min-height: 90vh;
+}
+
+.sidebar input, .sidebar button {
+  width: 100%;
+  padding: 8px;
+  margin: 5px 0;
+}
+
+.sidebar ul { list-style: none; margin-top: 10px; }
+
+.sidebar li {
+  padding: 10px;
+  cursor: pointer;
+  border-radius: 4px;
+  margin-bottom: 5px;
+}
+
+.sidebar li:hover, .sidebar li.active { background: #dfe6e9; }
+
+.mainPanel { flex: 1; padding: 20px; }
+
+#taskFormBox { margin: 15px 0; display: flex; gap: 10px; }
+#taskFormBox input { flex: 1; padding: 8px; }
+#taskFormBox button { padding: 8px 15px; background: #27ae60; color: white; border: none; border-radius: 4px; cursor: pointer; }
+
+#taskBoard { display: flex; gap: 15px; margin-top: 20px; }
+
+.column {
+  background: #ebecf0;
+  flex: 1;
+  padding: 10px;
+  border-radius: 6px;
+  min-height: 300px;
+}
+
+.taskCard {
+  background: white;
+  padding: 10px;
+  border-radius: 4px;
+  margin-bottom: 8px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.taskCard select { width: 100%; margin-top: 5px; }
+
+
+
+#memberBox {
+  margin: 15px 0;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+#memberBox input { padding: 8px; flex: 1; max-width: 250px; }
+#memberBox button { padding: 8px 15px; background: #2980b9; color: white; border: none; border-radius: 4px; cursor: pointer; }
+#memberList { font-size: 13px; color: #555; }
+
+#taskFormBox select { padding: 8px; }
+
+.taskCard { cursor: pointer; }
+.taskCard select { cursor: pointer; }
+
+#commentModal {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.modalBox {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  width: 400px;
+  max-height: 80vh;
+  overflow-y: auto;
+  position: relative;
+}
+
+#closeModal {
+  position: absolute;
+  top: 10px;
+  right: 15px;
+  cursor: pointer;
+  font-size: 20px;
+}
+
+#commentsList { margin: 15px 0; max-height: 250px; overflow-y: auto; }
+
+.commentItem {
+  background: #f4f5f7;
+  padding: 8px;
+  border-radius: 4px;
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+
+.commentItem b { color: #2c3e50; }
+
+#commentInput { width: 100%; padding: 8px; margin-top: 10px; }
+#postCommentBtn { width: 100%; padding: 8px; margin-top: 8px; background: #27ae60; color: white; border: none; border-radius: 4px; cursor: pointer; }
