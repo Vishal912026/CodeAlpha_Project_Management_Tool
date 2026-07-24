@@ -1,4 +1,4 @@
-const API_URL = "http://localhost:5000/api";
+const API_URL = "https://codealpha-project-management-tool-gomj.onrender.com/api";
 let token = localStorage.getItem("token");
 let currentProjectId = null;
 let currentTaskId = null;
