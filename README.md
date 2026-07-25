@@ -1,8 +1,8 @@
 # Project Management Tool
 
 ## Live Demo
-- Frontend: (deploy karne ke baad add karunga)
-- Backend: (deploy karne ke baad add karunga)
+- Frontend: https://codealpha-project-management-tool.netlify.app
+- Backend: https://codealpha-project-management-tool-gomj.onrender.com
 
 This is my Task 3 project for CodeAlpha Full Stack Development Internship. It's a simple project management app where you can create projects, add team members, create tasks, assign them to people, and comment on tasks. Basically a mini Trello clone.
 
