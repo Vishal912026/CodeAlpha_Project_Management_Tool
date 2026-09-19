@@ -49,7 +49,7 @@ exports.addMember = async (req, res) => {
     const updated = await Project.findByIdAndUpdate(
       project._id,
       { $addToSet: { members: user._id } },
-      { new: true }
+            { returnDocument: 'after' }
     );
     res.json(updated);
   } catch (err) {
