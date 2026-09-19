@@ -2,10 +2,24 @@ const User = require('../models/User');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
-// Register
+const clean = (value) => String(value ?? '').trim();
+const EMAIL_REGEX = /^\S+@\S+\.\S+$/;
+
 exports.registerUser = async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const name = clean(req.body.name);
+    const email = clean(req.body.email).toLowerCase();
+    const password = clean(req.body.password);
+
+    if (!name || !email || !password) {
+      return res.status(400).json({ message: 'Please fill in all fields' });
+    }
+    if (!EMAIL_REGEX.test(email)) {
+      return res.status(400).json({ message: 'Please enter a valid email' });
+    }
+    if (password.length < 6) {
+      return res.status(400).json({ message: 'Password must be at least 6 characters' });
+    }
 
     const userExists = await User.findOne({ email });
     if (userExists) return res.status(400).json({ message: 'User already exists' });
@@ -20,14 +34,22 @@ exports.registerUser = async (req, res) => {
       token: generateToken(user._id),
     });
   } catch (err) {
+    if (err.code === 11000) {
+      return res.status(400).json({ message: 'User already exists' });
+    }
     res.status(500).json({ message: err.message });
   }
 };
 
-// Login
 exports.loginUser = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const email = clean(req.body.email).toLowerCase();
+    const password = clean(req.body.password);
+
+    if (!email || !password) {
+      return res.status(400).json({ message: 'Please fill in all fields' });
+    }
+
     const user = await User.findOne({ email });
 
     if (user && (await bcrypt.compare(password, user.password))) {
