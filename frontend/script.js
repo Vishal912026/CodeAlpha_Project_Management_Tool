@@ -230,5 +230,5 @@ document.getElementById("closeModal").addEventListener("click", () => {
 
 document.getElementById("logoutBtn").addEventListener("click", () => {
   localStorage.clear();
-  location.reload();
+  location.href = location.pathname;
 });
