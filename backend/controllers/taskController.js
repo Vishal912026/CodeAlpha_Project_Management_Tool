@@ -57,8 +57,11 @@ exports.getTasksByProject = async (req, res) => {
   try {
     const project = await getProjectIfMember(req.params.projectId, req.user);
     if (!project) return res.status(404).json({ message: 'Project not found' });
+    
+       const tasks = await Task.find({ project: project._id })
+      .populate('comments.postedBy', 'name')
+      .populate('assignedTo', 'name');
 
-    const tasks = await Task.find({ project: project._id }).populate('comments.postedBy', 'name');
     res.json(tasks);
   } catch (err) {
     handleError(res, err);

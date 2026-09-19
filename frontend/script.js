@@ -16,6 +16,7 @@ function escapeHtml(str) {
 }
 
 
+
 async function api(path, options = {}) {
   const headers = { ...(options.headers || {}) };
   if (options.body) headers["Content-Type"] = "application/json";
@@ -202,18 +203,42 @@ document.getElementById("createTaskBtn").addEventListener("click", async () => {
   const title = document.getElementById("taskTitleInput").value.trim();
   const priority = document.getElementById("taskPriorityInput").value;
   const assignedTo = document.getElementById("taskAssignInput").value;
+  const dueDate = document.getElementById("taskDueInput").value; // "YYYY-MM-DD" or ""
   if (!title || !currentProjectId) return;
 
   const result = await api("/tasks", {
     method: "POST",
-    body: JSON.stringify({ title, priority, status: "To-Do", project: currentProjectId, assignedTo: assignedTo || null })
+    body: JSON.stringify({
+      title,
+      priority,
+      status: "To-Do",
+      project: currentProjectId,
+      assignedTo: assignedTo || null,
+      dueDate: dueDate || undefined
+    })
   });
   if (!result) return;
   if (!result.ok) return alert(errMsg(result, "Could not create task"));
 
   document.getElementById("taskTitleInput").value = "";
+  document.getElementById("taskDueInput").value = "";
   loadTasks();
 });
+
+function todayString() {
+  const now = new Date();
+  return now.getFullYear() + "-" + String(now.getMonth() + 1).padStart(2, "0") + "-" + String(now.getDate()).padStart(2, "0");
+}
+
+function dueDateHtml(t) {
+  if (!t.dueDate) return "";
+  const d = new Date(t.dueDate);
+  if (isNaN(d.getTime())) return "";
+  const dueStr = d.toISOString().slice(0, 10);
+  const overdue = dueStr < todayString() && t.status !== "Done";
+  const label = d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
+  return `<p class="${overdue ? "overdue" : ""}">Due: ${label}${overdue ? " (overdue)" : ""}</p>`;
+}
 
 async function loadTasks() {
   const result = await api("/tasks/" + currentProjectId);
@@ -228,20 +253,25 @@ async function loadTasks() {
 
   tasks.forEach(t => {
     const commentCount = Array.isArray(t.comments) ? t.comments.length : 0;
+    const assignee = t.assignedTo && t.assignedTo.name ? escapeHtml(t.assignedTo.name) : "Unassigned";
     const card = document.createElement("div");
     card.className = "taskCard";
     card.innerHTML = `
       <strong>${escapeHtml(t.title)}</strong>
       <p>Priority: ${escapeHtml(t.priority)}</p>
+      <p>Assigned to: ${assignee}</p>
+      ${dueDateHtml(t)}
       <p>Comments: ${commentCount}</p>
       <select onchange="updateStatus('${t._id}', this.value)">
         <option value="To-Do" ${t.status === "To-Do" ? "selected" : ""}>To-Do</option>
         <option value="In-Progress" ${t.status === "In-Progress" ? "selected" : ""}>In-Progress</option>
         <option value="Done" ${t.status === "Done" ? "selected" : ""}>Done</option>
       </select>
+      <button class="deleteBtn" onclick="deleteTask('${t._id}')">Delete</button>
     `;
     card.addEventListener("click", (e) => {
-      if (e.target.tagName !== "SELECT") openComments(t._id, t.title);
+      if (e.target.closest("select, button")) return;
+      openComments(t._id, t.title);
     });
     if (t.status === "To-Do") document.getElementById("todoList").appendChild(card);
     else if (t.status === "In-Progress") document.getElementById("inprogressList").appendChild(card);
@@ -255,6 +285,16 @@ async function updateStatus(taskId, status) {
     body: JSON.stringify({ status })
   });
   if (result && !result.ok) alert(errMsg(result, "Could not update task"));
+  loadTasks();
+}
+
+async function deleteTask(taskId) {
+  if (!confirm("Delete this task? This cannot be undone.")) return;
+
+  const result = await api("/tasks/" + taskId, { method: "DELETE" });
+  if (!result) return;
+  if (!result.ok) return alert(errMsg(result, "Could not delete task"));
+
   loadTasks();
 }
 

@@ -157,3 +157,9 @@ header {
 
 #commentInput { width: 100%; padding: 8px; margin-top: 10px; }
 #postCommentBtn { width: 100%; padding: 8px; margin-top: 8px; background: #27ae60; color: white; border: none; border-radius: 4px; cursor: pointer; }
+
+
+#taskFormBox input[type="date"] { flex: none; }
+.taskCard p.overdue { color: #c0392b; font-weight: bold; }
+.deleteBtn { width: 100%; margin-top: 8px; padding: 6px; background: #e74c3c; color: white; border: none; border-radius: 4px; cursor: pointer; }
+.deleteBtn:hover { background: #c0392b; }
