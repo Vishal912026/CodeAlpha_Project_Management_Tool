@@ -3,6 +3,8 @@ let token = localStorage.getItem("token");
 let currentProjectId = null;
 let currentTaskId = null;
 let isRegisterMode = false;
+let isLoggingOut = false;
+let lastNetworkAlertAt = 0;
 
 function escapeHtml(str) {
   return String(str ?? "")
@@ -13,6 +15,53 @@ function escapeHtml(str) {
     .replace(/'/g, "&#39;");
 }
 
+
+async function api(path, options = {}) {
+  const headers = { ...(options.headers || {}) };
+  if (options.body) headers["Content-Type"] = "application/json";
+  if (token) headers.Authorization = "Bearer " + token;
+
+  let res;
+  try {
+    res = await fetch(API_URL + path, { ...options, headers });
+  } catch (err) {
+
+    if (Date.now() - lastNetworkAlertAt > 5000) {
+      alert("Cannot reach the server. It may be waking up (can take up to 50 seconds). Please wait a moment and try again.");
+      lastNetworkAlertAt = Date.now();
+    }
+    return null;
+  }
+
+  let data = null;
+  try {
+    data = await res.json();
+  } catch (err) {
+    data = null;
+  }
+
+  if (res.status === 401 && !path.startsWith("/auth/")) {
+    if (!isLoggingOut) {
+      alert("Your session has expired. Please login again.");
+      logout();
+    }
+    return null;
+  }
+
+  return { ok: res.ok, status: res.status, data };
+}
+
+function errMsg(result, fallback) {
+  return (result && result.data && result.data.message) || fallback;
+}
+
+function logout() {
+  isLoggingOut = true;
+  token = null;
+  localStorage.removeItem("token");
+  localStorage.removeItem("userName");
+  location.href = location.pathname;
+}
 
 const authSection = document.getElementById("authSection");
 const appSection = document.getElementById("appSection");
@@ -33,57 +82,68 @@ function toggleAuthMode() {
 }
 
 document.getElementById("authBtn").addEventListener("click", async () => {
-  const name = document.getElementById("nameInput").value;
-  const email = document.getElementById("emailInput").value;
+  const authBtn = document.getElementById("authBtn");
+  if (authBtn.disabled) return;
+
+  const name = document.getElementById("nameInput").value.trim();
+  const email = document.getElementById("emailInput").value.trim();
   const password = document.getElementById("passwordInput").value;
+
+  if (!email || !password || (isRegisterMode && !name)) {
+    alert("Please fill in all fields");
+    return;
+  }
 
   const endpoint = isRegisterMode ? "/auth/register" : "/auth/login";
   const body = isRegisterMode ? { name, email, password } : { email, password };
 
-  const res = await fetch(API_URL + endpoint, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body)
-  });
-  const data = await res.json();
+  authBtn.disabled = true;
+  authBtn.textContent = "Please wait...";
 
-  if (res.ok) {
-    localStorage.setItem("token", data.token);
-    localStorage.setItem("userName", data.name);
-    token = data.token;
-    showApp();
-  } else {
-    alert(data.message || "Something went wrong");
+  try {
+    const result = await api(endpoint, { method: "POST", body: JSON.stringify(body) });
+    if (!result) return;
+
+    if (result.ok && result.data && result.data.token) {
+      localStorage.setItem("token", result.data.token);
+      localStorage.setItem("userName", result.data.name);
+      token = result.data.token;
+      showApp();
+    } else {
+      alert(errMsg(result, "Something went wrong"));
+    }
+  } finally {
+    authBtn.disabled = false;
+    authBtn.textContent = isRegisterMode ? "Register" : "Login";
   }
 });
 
 function showApp() {
   authSection.style.display = "none";
   appSection.style.display = "flex";
-  document.getElementById("userInfo").textContent = "Hi, " + localStorage.getItem("userName");
+  document.getElementById("userInfo").textContent = "Hi, " + (localStorage.getItem("userName") || "");
   document.getElementById("logoutBtn").style.display = "inline-block";
   loadProjects();
 }
 
 document.getElementById("createProjectBtn").addEventListener("click", async () => {
-  const name = document.getElementById("projectNameInput").value;
+  const name = document.getElementById("projectNameInput").value.trim();
   if (!name) return;
 
-  await fetch(API_URL + "/projects", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: "Bearer " + token },
-    body: JSON.stringify({ name })
-  });
+  const result = await api("/projects", { method: "POST", body: JSON.stringify({ name }) });
+  if (!result) return;
+  if (!result.ok) return alert(errMsg(result, "Could not create project"));
 
   document.getElementById("projectNameInput").value = "";
   loadProjects();
 });
 
 async function loadProjects() {
-  const res = await fetch(API_URL + "/projects", {
-    headers: { Authorization: "Bearer " + token }
-  });
-  const projects = await res.json();
+  const result = await api("/projects");
+  if (!result) return;
+  if (!result.ok) return alert(errMsg(result, "Could not load projects"));
+
+  const projects = Array.isArray(result.data) ? result.data : [];
 
   const list = document.getElementById("projectList");
   list.innerHTML = "";
@@ -105,26 +165,26 @@ function selectProject(id, name) {
 }
 
 document.getElementById("addMemberBtn").addEventListener("click", async () => {
-  const email = document.getElementById("memberEmailInput").value;
-  if (!email) return;
+  const email = document.getElementById("memberEmailInput").value.trim();
+  if (!email || !currentProjectId) return;
 
-  const res = await fetch(API_URL + "/projects/" + currentProjectId + "/members", {
+  const result = await api("/projects/" + currentProjectId + "/members", {
     method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: "Bearer " + token },
     body: JSON.stringify({ email })
   });
-  const data = await res.json();
-  if (!res.ok) return alert(data.message);
+  if (!result) return;
+  if (!result.ok) return alert(errMsg(result, "Could not add member"));
 
   document.getElementById("memberEmailInput").value = "";
   loadMembers();
 });
 
 async function loadMembers() {
-  const res = await fetch(API_URL + "/projects/" + currentProjectId + "/members", {
-    headers: { Authorization: "Bearer " + token }
-  });
-  const members = await res.json();
+  const result = await api("/projects/" + currentProjectId + "/members");
+  if (!result) return;
+  if (!result.ok) return alert(errMsg(result, "Could not load members"));
+
+  const members = Array.isArray(result.data) ? result.data : [];
 
   document.getElementById("memberList").textContent = members.map(m => m.name).join(", ");
 
@@ -139,38 +199,41 @@ async function loadMembers() {
 }
 
 document.getElementById("createTaskBtn").addEventListener("click", async () => {
-  const title = document.getElementById("taskTitleInput").value;
+  const title = document.getElementById("taskTitleInput").value.trim();
   const priority = document.getElementById("taskPriorityInput").value;
   const assignedTo = document.getElementById("taskAssignInput").value;
   if (!title || !currentProjectId) return;
 
-  await fetch(API_URL + "/tasks", {
+  const result = await api("/tasks", {
     method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: "Bearer " + token },
     body: JSON.stringify({ title, priority, status: "To-Do", project: currentProjectId, assignedTo: assignedTo || null })
   });
+  if (!result) return;
+  if (!result.ok) return alert(errMsg(result, "Could not create task"));
 
   document.getElementById("taskTitleInput").value = "";
   loadTasks();
 });
 
 async function loadTasks() {
-  const res = await fetch(API_URL + "/tasks/" + currentProjectId, {
-    headers: { Authorization: "Bearer " + token }
-  });
-  const tasks = await res.json();
+  const result = await api("/tasks/" + currentProjectId);
+  if (!result) return;
+  if (!result.ok) return alert(errMsg(result, "Could not load tasks"));
+
+  const tasks = Array.isArray(result.data) ? result.data : [];
 
   document.getElementById("todoList").innerHTML = "";
   document.getElementById("inprogressList").innerHTML = "";
   document.getElementById("doneList").innerHTML = "";
 
   tasks.forEach(t => {
+    const commentCount = Array.isArray(t.comments) ? t.comments.length : 0;
     const card = document.createElement("div");
     card.className = "taskCard";
     card.innerHTML = `
       <strong>${escapeHtml(t.title)}</strong>
       <p>Priority: ${escapeHtml(t.priority)}</p>
-      <p>Comments: ${t.comments.length}</p>
+      <p>Comments: ${commentCount}</p>
       <select onchange="updateStatus('${t._id}', this.value)">
         <option value="To-Do" ${t.status === "To-Do" ? "selected" : ""}>To-Do</option>
         <option value="In-Progress" ${t.status === "In-Progress" ? "selected" : ""}>In-Progress</option>
@@ -187,11 +250,11 @@ async function loadTasks() {
 }
 
 async function updateStatus(taskId, status) {
-  await fetch(API_URL + "/tasks/" + taskId, {
+  const result = await api("/tasks/" + taskId, {
     method: "PUT",
-    headers: { "Content-Type": "application/json", Authorization: "Bearer " + token },
     body: JSON.stringify({ status })
   });
+  if (result && !result.ok) alert(errMsg(result, "Could not update task"));
   loadTasks();
 }
 
@@ -203,31 +266,34 @@ function openComments(taskId, title) {
 }
 
 async function loadComments() {
-  const res = await fetch(API_URL + "/tasks/" + currentProjectId, {
-    headers: { Authorization: "Bearer " + token }
-  });
-  const tasks = await res.json();
+  const result = await api("/tasks/" + currentProjectId);
+  if (!result) return;
+  if (!result.ok) return alert(errMsg(result, "Could not load comments"));
+
+  const tasks = Array.isArray(result.data) ? result.data : [];
   const task = tasks.find(t => t._id === currentTaskId);
+  const comments = task && Array.isArray(task.comments) ? task.comments : [];
 
   const list = document.getElementById("commentsList");
   list.innerHTML = "";
-  task.comments.forEach(c => {
+  comments.forEach(c => {
     const div = document.createElement("div");
     div.className = "commentItem";
-     div.innerHTML = `<b>${escapeHtml(c.postedBy ? c.postedBy.name : "User")}:</b> ${escapeHtml(c.text)}`;
+    div.innerHTML = `<b>${escapeHtml(c.postedBy ? c.postedBy.name : "User")}:</b> ${escapeHtml(c.text)}`;
     list.appendChild(div);
   });
 }
 
 document.getElementById("postCommentBtn").addEventListener("click", async () => {
-  const text = document.getElementById("commentInput").value;
-  if (!text) return;
+  const text = document.getElementById("commentInput").value.trim();
+  if (!text || !currentTaskId) return;
 
-  await fetch(API_URL + "/tasks/" + currentTaskId + "/comments", {
+  const result = await api("/tasks/" + currentTaskId + "/comments", {
     method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: "Bearer " + token },
     body: JSON.stringify({ text })
   });
+  if (!result) return;
+  if (!result.ok) return alert(errMsg(result, "Could not post comment"));
 
   document.getElementById("commentInput").value = "";
   loadComments();
@@ -238,7 +304,4 @@ document.getElementById("closeModal").addEventListener("click", () => {
   document.getElementById("commentModal").style.display = "none";
 });
 
-document.getElementById("logoutBtn").addEventListener("click", () => {
-  localStorage.clear();
-  location.href = location.pathname;
-});
+document.getElementById("logoutBtn").addEventListener("click", logout);
