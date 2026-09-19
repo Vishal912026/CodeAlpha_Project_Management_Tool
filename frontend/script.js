@@ -4,6 +4,16 @@ let currentProjectId = null;
 let currentTaskId = null;
 let isRegisterMode = false;
 
+function escapeHtml(str) {
+  return String(str ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+
 const authSection = document.getElementById("authSection");
 const appSection = document.getElementById("appSection");
 
@@ -158,8 +168,8 @@ async function loadTasks() {
     const card = document.createElement("div");
     card.className = "taskCard";
     card.innerHTML = `
-      <strong>${t.title}</strong>
-      <p>Priority: ${t.priority}</p>
+      <strong>${escapeHtml(t.title)}</strong>
+      <p>Priority: ${escapeHtml(t.priority)}</p>
       <p>Comments: ${t.comments.length}</p>
       <select onchange="updateStatus('${t._id}', this.value)">
         <option value="To-Do" ${t.status === "To-Do" ? "selected" : ""}>To-Do</option>
@@ -204,7 +214,7 @@ async function loadComments() {
   task.comments.forEach(c => {
     const div = document.createElement("div");
     div.className = "commentItem";
-    div.innerHTML = `<b>${c.postedBy ? c.postedBy.name : "User"}:</b> ${c.text}`;
+     div.innerHTML = `<b>${escapeHtml(c.postedBy ? c.postedBy.name : "User")}:</b> ${escapeHtml(c.text)}`;
     list.appendChild(div);
   });
 }
